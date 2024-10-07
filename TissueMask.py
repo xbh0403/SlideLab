@@ -79,6 +79,8 @@ class TissueMask:
             kernel = np.ones((kernel_size, kernel_size), np.uint8)
             binary_mask = cv2.dilate(binary_mask, kernel)
 
+        return binary_mask
+    
     def combined_mask(self):
         mask_methods = self.masks_list
         method_dict = {
