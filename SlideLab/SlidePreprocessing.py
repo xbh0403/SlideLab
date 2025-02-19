@@ -518,21 +518,14 @@ def patient_csv(input_path, results_path):
 
 # --------------------------- MAIN ----------------------------------------------------
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="WSI Preprocessing")
-    
-    # Add config file argument
-    parser.add_argument("--config", type=str, help="Path to YAML config file", default=os.path.join(os.path.dirname(__file__), 'PreProcessingConfigs/DefaultConfig.yaml'))
-    
-    # Keep existing arguments
-    parser.add_argument("-i", "--input_path", type=str, required=True)
-    parser.add_argument("-o", "--output_path", type=str, required=True)
-
-    return parser.parse_args()
-
-
-def main():
-    args = parse_args()
+def preprocess_slides(input_path, output_path, config_path=os.path.join(os.path.dirname(__file__), 'PreProcessingConfigs/DefaultConfig.yaml')):
+    # Create simple args dict to maintain compatibility
+    args = {
+        'input_path': input_path,
+        'output_path': output_path,
+        'config': config_path
+    }
+    args = argparse.Namespace(**args)
     
     # Load config from file and/or command line args
     config = load_config(args.config, args)
