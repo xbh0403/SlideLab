@@ -591,4 +591,7 @@ def preprocess_slides(input_path, output_path, config_path=os.path.join(os.path.
 
 
 if __name__ == "__main__":
-    main()
+    input_path = "path/to/input/slides"
+    output_path = "path/to/output/directory"
+    config_path = "path/to/config/file"
+    preprocess_slides(input_path, output_path, config_path)
