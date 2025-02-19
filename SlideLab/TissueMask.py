@@ -127,7 +127,7 @@ class TissueMask:
                 mask_percentage = (np.sum(cleaned_mask) / cleaned_mask.size) * 100
 
         if kernel_size > 1:
-            selem = morphology.square(kernel_size)
+            selem = morphology.footprint_rectangle(kernel_size, kernel_size)    # Fix: FutureWarning: `square` is deprecated since version 0.25 and will be removed in version 0.27. Use `skimage.morphology.footprint_rectangle` instead.
             cleaned_mask = morphology.dilation(cleaned_mask, selem)
         return (cleaned_mask.astype(np.uint8)) * 255
 
