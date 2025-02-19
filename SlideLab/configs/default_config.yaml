@@ -1,0 +1,22 @@
+# Tile customization
+desired_size: 512
+desired_magnification: 20
+overlap: 0
+
+# Preprocessing options
+remove_blurry_tiles: true
+normalize_staining: true
+encode: false
+
+# Thresholds
+tissue_threshold: 0.7
+blur_threshold: 0.015
+min_tiles: 0
+
+# Device settings
+device: null  # Will use CUDA if available
+gpu_processes: 1
+cpu_processes: null  # Will use os.cpu_count() - 1
+
+# QC 
+min_tiles: 0

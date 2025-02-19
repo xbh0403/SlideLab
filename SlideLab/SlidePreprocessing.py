@@ -21,6 +21,7 @@ from TileNormalization import normalizeStaining, normalizeStaining_torch
 from TileQualityFilters import LaplaceFilter, plot_distribution
 from TissueMask import is_tissue, get_region_mask, TissueMask
 from tiling.TileIterator import TileIterator
+from configs.config import Config, load_config
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
@@ -29,7 +30,7 @@ SlidePreprocessing.py
 
 Author: Lorenzo Olmo Marchal
 Created: 3/5/2024
-Last Updated:  2/4/2025
+Last Updated:  2/19/2025
 
 Description:
 This script automates the preprocessing and normalization of Whole Slide Images (WSI) in digital histopathology. 
@@ -310,7 +311,7 @@ def preprocessing(path, patient_id, args):
 
     # setting up process information
     if args.cpu_processes is None or args.cpu_processes > os.cpu_count():
-        max_workers = os.cpu_count()
+        max_workers = os.cpu_count() - 1
     else:
         max_workers = args.cpu_processes
 
@@ -519,58 +520,35 @@ def patient_csv(input_path, results_path):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="WSI Preprocessing")
-
-    # input/output
-    parser.add_argument("-i", "--input_path", type=str)
-    parser.add_argument("-o", "--output_path", type=str)
-
-    # tile customization
-    parser.add_argument("-s", "--desired_size", type=int, default=256,
-                        help="Desired size of the tiles (default: %(default)s)")
-    parser.add_argument("-m", "--desired_magnification", type=int, default=20,
-                        help="Desired magnification level (default: %(default)s)")
-    parser.add_argument("-ov", "--overlap", type=int, default=1,
-                        help="Overlap between tiles (default: %(default)s)")
-
-    # preprocessing processes customization
-    parser.add_argument("-rb", "--remove_blurry_tiles", action="store_true",
-                        help="lag to enable usage of the laplacian filter to remove blurry tiles")
-    parser.add_argument("-n", "--normalize_staining", action="store_true",
-                        help="Flag to enable normalization of tiles")
-    parser.add_argument("-e", "--encode", action="store_true",
-                        help="Flag to encode tiles and create associated .h5 file")
-    parser.add_argument("--extract_high_quality", action="store_true",
-                        help="extract high quality ")
-
-    # thresholds
-    parser.add_argument("-th", "--tissue_threshold", type=float, default=0.7,
-                        help="Threshold to consider a tile as Tissue(default: %(default)s)")
-    parser.add_argument("-bh", "--blur_threshold", type=float, default=0.015,
-                        help="Threshold for laplace filter variance (default: %(default)s)")
     
-
-    # for devices + multithreading
-    parser.add_argument("--device", default=None)
-    parser.add_argument("--gpu_processes", type=int, default=1)
-    parser.add_argument("--cpu_processes", type=int, default=os.cpu_count())
-
-    # QC 
-    parser.add_argument( "--min_tiles", type=float, default=0,
-                        help="Number of tiles a patient should have.")
+    # Add config file argument
+    parser.add_argument("--config", type=str, help="Path to YAML config file", default=os.path.join(os.path.dirname(__file__), 'PreProcessingConfigs/DefaultConfig.yaml'))
     
+    # Keep existing arguments
+    parser.add_argument("-i", "--input_path", type=str, required=True)
+    parser.add_argument("-o", "--output_path", type=str, required=True)
 
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-
-    input_path = args.input_path
-    output_path = args.output_path
-    if args.device is None:
+    
+    # Load config from file and/or command line args
+    config = load_config(args.config, args)
+    
+    # Validate required parameters
+    if not config.input_path or not config.output_path:
+        raise ValueError("input_path and output_path are required parameters")
+    
+    input_path = config.input_path
+    output_path = config.output_path
+    
+    # Set device
+    if config.device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     else:
-        device = args.device
+        device = config.device
 
     # raise error if invalid input path
     if not os.path.exists(input_path):
@@ -581,7 +559,7 @@ def main():
         os.makedirs(output_path)
 
     # making encoding directory only if encoding
-    if not os.path.exists(os.path.join(output_path, "encoded")) and args.encode:
+    if not os.path.exists(os.path.join(output_path, "encoded")) and config.encode:
         os.makedirs(os.path.join(output_path, "encoded"))
     encoder_path = os.path.join(output_path, "encoded")
 
@@ -598,11 +576,11 @@ def main():
     for i, row in tqdm.tqdm(patients.iterrows(), total=len(patients)):
         print(f"Working on: {row['Patient ID']}")
         if not os.path.isfile(os.path.join(output_path, row["Patient ID"], row["Patient ID"] + ".csv")):
-            results = preprocessing(row["Original Slide Path"], row["Patient ID"], args)
+            results = preprocessing(row["Original Slide Path"], row["Patient ID"], config)
             Reports.Reports([results[0]], [results[1]], output_path)
-            # results.append(preprocessing(row["Original Slide Path"], row["Patient ID"], args))
+            # results.append(preprocessing(row["Original Slide Path"], row["Patient ID"], config))
     # encode after all patients have been preprocessed
-    if args.encode:
+    if config.encode:
         for i, row in tqdm.tqdm(patients.iterrows(), total=len(patients)):
             patient_id = row["Patient ID"]
             path = os.path.join(output_path, patient_id, patient_id + ".csv")

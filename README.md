@@ -1,4 +1,3 @@
-
 <img src="https://github.com/user-attachments/assets/e7219b41-d35b-4a31-b1c2-2eac9c71d03f" width="350" height="300">
 
 
@@ -98,3 +97,26 @@ python SlidePreprocessing.py -i /path/to/input/-o /path/to/output/ \
 
 ## To run individual classes: 
 Can create related objects and use their associated methods. Please see `Example.ipynb` and  `Masking Examples.ipynb`.
+
+## Configuration
+
+The script can be configured either through command line arguments or a YAML configuration file. 
+
+### Using YAML Configuration
+
+Create a YAML file (e.g., `config.yaml`) with your desired settings:
+
+```yaml
+input_path: "/path/to/input/"
+output_path: "/path/to/output/"
+desired_size: 512
+desired_magnification: 40
+normalize_staining: true
+remove_blurry_tiles: true
+```
+
+Then run the script with:
+
+```sh
+python SlidePreprocessing.py --config config.yaml -i /path/to/input/ -o /path/to/output/
+```
